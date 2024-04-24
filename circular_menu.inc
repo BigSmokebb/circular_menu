@@ -149,7 +149,7 @@ public OnClickDynamicPlayerTextDraw(playerid, PlayerText:textid)
                 textid == CM_MENU_CIRCULAR_TEXTDRAW[ playerid ][ CM_TEXTDRAW_TEXT ][ i ])
             {
                 // El jugador ha clickeado en un círculo
-                printf("El jugador %d ha clickeado en el círculo %d", playerid, i);
+                //printf("El jugador %d ha clickeado en el círculo %d", playerid, i);
                 CallLocalFunction("OnCircularMenuResponse", "iii", playerid,i,CM_PLAYER_CIRCULAR_IDMENU[playerid]);
             }
  
@@ -210,7 +210,7 @@ stock ADD_ITEM_MC(playerid, item[ 50 ], bool:ispsrite = true, cmobjectid = 18631
     return 0;
 }
 
-stock SHOW_CIRCULAR_MENU(playerid, menuid)//,  tittle[] = "Menu",  header[] = "Interaction")
+stock SHOW_CIRCULAR_MENU(playerid, menuid)
 {
     if(menuid <= 0) 
         return 0;
@@ -223,9 +223,6 @@ stock SHOW_CIRCULAR_MENU(playerid, menuid)//,  tittle[] = "Menu",  header[] = "I
     }
     foreach(new i : PLAYER_CM_ITEMS[playerid])
     {
-   
-            //Menu_Create_TD(playerid, j, player_item_list[playerid][i]);
-
         if(CMSAVE_LIST_MENU[playerid][ i ][ CM_IsSprite ] == true)
         {
             CM_MENU_CIRCULAR_TEXTDRAW[ playerid ][ CM_TEXTDRAW_SPRITE ][ i ] = CreatePlayerTextDraw(playerid, 295.00, 235.00, CMSAVE_LIST_MENU[playerid][i][ CM_SpriteIMG ]);
