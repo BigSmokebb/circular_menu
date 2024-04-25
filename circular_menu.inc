@@ -1,6 +1,4 @@
-
-
- //
+//
 //  Circular Menu by BigSmoke_bb
 // Respetar creditos.
 // - Discord: BigSmoke_bb
@@ -10,7 +8,7 @@
 //
 //
 //Macros/Defines/Funciones
-#include <YSI\y_iterate>
+
 #define CM_CircularMenu_VERSION                                   (10000) //a.b.c g+10000*a+100*b+c
 #define CM_CircularMenu_LIBRARY_NAME                              "Circular Menu"
 #define CM_CircularMenu_AUTHOR_NAME                               "BigSmoke_bb"
@@ -53,7 +51,8 @@ enum @CM_MENU_TEXTDRAWS
 {
     PlayerText:CM_TEXTDRAW_SPRITE[ CIRCULAR_MENU_MAX_ITEM ],
     PlayerText:CM_TEXTDRAW_CIRCULAR[ CIRCULAR_MENU_MAX_ITEM ],
-    PlayerText:CM_TEXTDRAW_TEXT[ CIRCULAR_MENU_MAX_ITEM ]
+    PlayerText:CM_TEXTDRAW_TEXT[ CIRCULAR_MENU_MAX_ITEM ],
+    PlayerText:CM_TEXTDRAW_CLOSE
 }
 enum @CMSAVE_LIST_MENU
 {   
@@ -111,7 +110,7 @@ public OnPlayerConnect(playerid)
 {
  
     CM_PLAYER_CIRCULAR_IDMENU[ playerid ] = 0;
-    return CallLocalFunction("Big_OnPlayerc", "i", playerid);
+    return CallLocalFunction("ALSS_OnPlayerCConect", "i", playerid);
 }
 
 #if defined _ALS_OnPlayerConnect
@@ -119,22 +118,49 @@ public OnPlayerConnect(playerid)
 #else
     #define _ALS_OnPlayerConnect
 #endif
-#define OnPlayerConnect Big_OnPlayerc
+#define OnPlayerConnect ALSS_OnPlayerCConect
 
-forward Big_OnPlayerc(playerid);
+forward ALSS_OnPlayerCConect(playerid);
 // ===============================================================================================
 public OnPlayerDisconnect(playerid, reason)
 {
     CM_DestroyMenuEditor(playerid);
-    return (ALSS_CallBacks & ALSS_OPC ? CallLocalFunction("ALSS_OnPlayerConnect", "i", playerid) : 1);
+    return CallLocalFunction("ALSS_OnPlayerDiscConnect", "ii", playerid,reason);
 }
 #if defined _ALS_OnPlayerDisconnect
     #undef OnPlayerDisconnect
 #else
     #define _ALS_OnPlayerDisconnect
 #endif
-#define OnPlayerDisconnect ALSS_OnPlayerConnect
-forward ALSS_OnPlayerConnect(playerid);
+#define OnPlayerDisconnect ALSS_OnPlayerDiscConnect
+forward ALSS_OnPlayerDiscConnect(playerid, reason);
+// ===============================================================================================
+public OnPlayerSpawn(playerid)
+{
+    CM_DestroyMenuEditor(playerid);
+    return CallLocalFunction("ALSS_OnPlayerSpawn", "i", playerid);
+}
+#if defined _ALS_OnPlayerSpawn
+    #undef OnPlayerSpawn
+#else
+    #define _ALS_OnPlayerSpawn
+#endif
+#define OnPlayerSpawn ALSS_OnPlayerSpawn
+forward ALSS_OnPlayerSpawn(playerid);
+// ===============================================================================================
+public OnPlayerDeath(playerid, killerid, reason)
+{
+    CM_DestroyMenuEditor(playerid);
+    return (ALSS_CallBacks & ALSS_OPC ? CallLocalFunction("ALSS_OnPlayerDeath", "iii", playerid, killerid, reason) : 1);
+}
+#if defined _ALS_OnPlayerDeath
+    #undef OnPlayerDeath
+#else
+    #define _ALS_OnPlayerDeath
+#endif
+#define OnPlayerDeath ALSS_OnPlayerDeath
+forward ALSS_OnPlayerDeath(playerid, killerid, reason);
+
 // ===============================================================================================
 public OnClickDynamicPlayerTextDraw(playerid, PlayerText:textid)
 {
@@ -142,6 +168,11 @@ public OnClickDynamicPlayerTextDraw(playerid, PlayerText:textid)
     //Code
     if(CM_PLAYER_CIRCULAR_IDMENU[playerid] != 0)
     {
+        if(textid == CM_MENU_CIRCULAR_TEXTDRAW[ playerid ][ CM_TEXTDRAW_CLOSE ])
+        {
+            CM_DestroyMenuEditor(playerid);
+            return 1;
+        }
         foreach(new i : PLAYER_CM_ITEMS[playerid])
         {
             if(textid == CM_MENU_CIRCULAR_TEXTDRAW[ playerid ][ CM_TEXTDRAW_CIRCULAR ][ i ] 
@@ -155,8 +186,8 @@ public OnClickDynamicPlayerTextDraw(playerid, PlayerText:textid)
  
         }
     }
-
-    return CallLocalFunction("cm_OnPlayerClickPlayerTextDraw", "i", playerid);
+    //printf("circular clic");
+    return CallLocalFunction("ALSS_OnClickDynamicPlayerText", "ii", playerid,_:textid);
 }
 #if defined _ALS_CM_PlayerCPlayerTextdraw
     #undef OnClickDynamicPlayerTextDraw
@@ -164,7 +195,9 @@ public OnClickDynamicPlayerTextDraw(playerid, PlayerText:textid)
     #define _ALS_CM_PlayerCPlayerTextdraw
 #endif
 
-#define OnClickDynamicPlayerTextDraw cm_OnPlayerClickPlayerTextDraw
+#define OnClickDynamicPlayerTextDraw ALSS_OnClickDynamicPlayerText
+forward ALSS_OnClickDynamicPlayerText(playerid, PlayerText:textid);
+
 //==================================================================== 
 //====================================================================
 public OnClickDynamicTextDraw(playerid, Text:textid)
@@ -178,7 +211,7 @@ public OnClickDynamicTextDraw(playerid, Text:textid)
         }
     }
 
-    return CallLocalFunction("cm_OnPlayerClickTextDraw", "i", playerid);
+    return CallLocalFunction("cm_OnPlayerClickTextDraw", "ii", playerid,_:textid);
 
 }
 #if defined _ALS_Oa_ClicTextdraw
@@ -188,6 +221,7 @@ public OnClickDynamicTextDraw(playerid, Text:textid)
 #endif
 
 #define OnClickDynamicTextDraw cm_OnPlayerClickTextDraw
+forward cm_OnPlayerClickTextDraw(playerid, Text:textid);
 //====================================================================
 
 stock ADD_ITEM_MC(playerid, item[ 50 ], bool:ispsrite = true, cmobjectid = 18631, cm_spritename[] = "ld_chat:goodcha")
@@ -262,8 +296,20 @@ stock SHOW_CIRCULAR_MENU(playerid, menuid)
         PlayerTextDrawSetOutline(playerid, CM_MENU_CIRCULAR_TEXTDRAW[ playerid ][ CM_TEXTDRAW_TEXT ][ i ], 0);
         PlayerTextDrawSetShadow(playerid, CM_MENU_CIRCULAR_TEXTDRAW[ playerid ][ CM_TEXTDRAW_TEXT ][ i ], 0);
         PlayerTextDrawSetSelectable(playerid, CM_MENU_CIRCULAR_TEXTDRAW[ playerid ][ CM_TEXTDRAW_TEXT ][ i ], 1);
+        //=============
+        CM_MENU_CIRCULAR_TEXTDRAW[ playerid ][ CM_TEXTDRAW_CLOSE ] = CreatePlayerTextDraw(playerid, 320.00, 250.00,"X");
+        PlayerTextDrawTextSize(playerid, CM_MENU_CIRCULAR_TEXTDRAW[ playerid ][ CM_TEXTDRAW_CLOSE ], 320.000000+10, 20.000000);
+        PlayerTextDrawLetterSize(playerid, CM_MENU_CIRCULAR_TEXTDRAW[ playerid ][ CM_TEXTDRAW_CLOSE ], 0.60, 1.5);
+        PlayerTextDrawSetProportional(playerid, CM_MENU_CIRCULAR_TEXTDRAW[ playerid ][ CM_TEXTDRAW_CLOSE ], 1);
+        PlayerTextDrawColor(playerid, CM_MENU_CIRCULAR_TEXTDRAW[ playerid ][ CM_TEXTDRAW_CLOSE ], 0xFF0000FF);
+        PlayerTextDrawFont(playerid, CM_MENU_CIRCULAR_TEXTDRAW[ playerid ][ CM_TEXTDRAW_CLOSE ], 3);
+        PlayerTextDrawAlignment(playerid, CM_MENU_CIRCULAR_TEXTDRAW[ playerid ][ CM_TEXTDRAW_CLOSE ], 0);
+        PlayerTextDrawSetOutline(playerid, CM_MENU_CIRCULAR_TEXTDRAW[ playerid ][ CM_TEXTDRAW_CLOSE ], 0);
+        PlayerTextDrawSetShadow(playerid, CM_MENU_CIRCULAR_TEXTDRAW[ playerid ][ CM_TEXTDRAW_CLOSE ], 0);
+        PlayerTextDrawSetSelectable(playerid, CM_MENU_CIRCULAR_TEXTDRAW[ playerid ][ CM_TEXTDRAW_CLOSE ], 1);
         pipixd ++ ;
     }
+    PlayerTextDrawShow(playerid, CM_MENU_CIRCULAR_TEXTDRAW[ playerid ][ CM_TEXTDRAW_CLOSE ]);
     CreateCircularMenu(playerid,295,235, pipixd);
 
     CM_PLAYER_CIRCULAR_IDMENU[playerid] = menuid;
@@ -309,15 +355,19 @@ CreateCircularMenu(playerid,Float:x, Float:y, size)
  
 CM_DestroyMenuEditor(playerid)
 {
-    for(new i; i < sizeof(CM_MENU_CIRCULAR_TEXTDRAW[]); i++)
+    if(CM_PLAYER_CIRCULAR_IDMENU[playerid] != 0)
     {
-        if(CM_MENU_CIRCULAR_TEXTDRAW[playerid][@CM_MENU_TEXTDRAWS:i] == INVALID_TEXT_DRAW) continue;
-        PlayerTextDrawDestroy(playerid, PlayerText:CM_MENU_CIRCULAR_TEXTDRAW[playerid][@CM_MENU_TEXTDRAWS:i]);
-        CM_MENU_CIRCULAR_TEXTDRAW[playerid][@CM_MENU_TEXTDRAWS:i] = INVALID_TEXT_DRAW;
+        for(new i; i < sizeof(CM_MENU_CIRCULAR_TEXTDRAW[]); i++)
+        {
+            if(CM_MENU_CIRCULAR_TEXTDRAW[playerid][@CM_MENU_TEXTDRAWS:i] == INVALID_TEXT_DRAW) continue;
+            PlayerTextDrawDestroy(playerid, PlayerText:CM_MENU_CIRCULAR_TEXTDRAW[playerid][@CM_MENU_TEXTDRAWS:i]);
+            CM_MENU_CIRCULAR_TEXTDRAW[playerid][@CM_MENU_TEXTDRAWS:i] = INVALID_TEXT_DRAW;
+        }
+        CM_PLAYER_CIRCULAR_IDMENU[playerid] = 0;
+        Iter_Clear(PLAYER_CM_ITEMS[playerid]);
+        CancelSelectTextDraw(playerid);
     }
-    CM_PLAYER_CIRCULAR_IDMENU[playerid] = 0;
-    Iter_Clear(PLAYER_CM_ITEMS[playerid]);
-    CancelSelectTextDraw(playerid);
+    
     return 1;
 }
 
